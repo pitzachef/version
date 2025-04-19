@@ -39,15 +39,40 @@ SplashText.Size = UDim2.new(1, 0, 0, 30)
 SplashText.Position = UDim2.new(0, 0, 0.5, 80) -- Positioned below logo
 SplashText.BackgroundTransparency = 1
 SplashText.Text = "Checking for updates.."
-local cv = "1.2"
-local wlv = game:HttpGet("https://raw.githubusercontent.com/pitzachef/version/refs/heads/main/version.txt")
-local wlurl = string.format("https://raw.githubusercontent.com/pitzachef/version/refs/heads/main/%d/src.luau", wlv)
-if string.find(wlv,cv) then
-	SplashText.Text = "Latest version: ".. wlv
-else SplashText.Text = "Found update: ".. wlv
-   loadstring(game:HttpGet(wlurl))()
-   task.wait(1)
-   ScreenGui:Destroy()
+local cv = "1.255" -- Current version
+local success, wlv = pcall(function()
+    return game:HttpGet("https://raw.githubusercontent.com/pitzachef/version/refs/heads/main/version.txt", true)
+end)
+
+if not success or not wlv then
+    SplashText.Text = "Failed to check version"
+    return
+end
+
+
+
+-- Trim whitespace from version
+wlv = string.gsub(wlv, "%s+", "")
+
+if wlv == cv then
+    SplashText.Text = "Latest version: " .. wlv
+else
+    SplashText.Text = "Found update: " .. wlv
+    local wlurl = string.format("https://raw.githubusercontent.com/pitzachef/version/refs/heads/main/%s/src.luau", wlv)
+    
+    local success, err = pcall(function()
+        loadstring(game:HttpGet(wlurl, true))()
+    end)
+    
+    if not success then
+        SplashText.Text = "Update failed: " .. tostring(err)
+        task.wait(3)
+    else
+        task.wait(1)
+        if ScreenGui then
+            ScreenGui:Destroy()
+        end
+    end
 end
 
 
@@ -152,7 +177,7 @@ Title.Name = "Title"
 Title.Size = UDim2.new(0.7, -10, 1, 0)
 Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "GUNC"
+Title.Text = "GUNC ".. cv
 Title.TextColor3 = Color3.fromRGB(240, 246, 252) -- GitHub text white
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Font = Enum.Font.Roboto
@@ -682,12 +707,7 @@ test("cache.invalidate", {}, function()
     cache.invalidate(container:FindFirstChild("Part"))
     assert(part ~= container:FindFirstChild("Part"), "Reference `part` could not be invalidated")
 end)
-getgenv().syn = {}
 
-
-ttest("syn", {}, function()
-    assert(syn.write_clipboard("Test"), "syn.write_clipboard not found")
-end)
 
 test("cache.iscached", {}, function()
     local part = Instance.new("Part")

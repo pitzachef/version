@@ -9,4 +9,4 @@ function download(version)
     writefile("gunc/updater.lua", game:HttpGet(string.format("https://github.com/%s/%s/src.lua", user, repo)))
 end
 
-return {install=function() download(version) return loadfile("gunc/src.lua")() end}
+return {install=function() download(version) warn("gunc installed version:"..version) return loadstring(readfile("gunc/src.lua"))() end}
